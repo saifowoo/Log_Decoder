@@ -1,50 +1,71 @@
-/********************************************************************************
-**                                                                            **
-**  FILENAME  : log_decoder.c                                                 **
-**                                                                            **
-**  DATE      : 2022-05-020                                                   **
-**                                                                            **
-**  AUTHOR    : Mohamed Tarek Abozaid                                         **
-********************************************************************************/
-/**********************************************************************************************************************
- * Includes
- *********************************************************************************************************************/
+/**********************************************************************************************************************/
+/*                                                                                                                    */
+/*  Application : Log Decoder                                                                                         */
+/*  Description : Log decoder is a simple console application, that takes a .csv format logfile as an input           */
+/*                and provides an output log file also in .csv format, with Payload decoded into meaningful           */
+/*                values and additional flags if certains checks are violated for a given frame.                      */
+/*                                                                                                                    */
+/*  File        : LogDecoder.c                                                                                        */
+/*                                                                                                                    */
+/*  Author      : Saif El-Deen M.                                                                                     */
+/*                                                                                                                    */
+/*  Date        : 29/05/2022                                                                                          */
+/*                                                                                                                    */
+/**********************************************************************************************************************/
+/* 1 / COMP_vidInit                                                                                                   */
+/* 2 /                                                                                                                */
+/* 3 /                                                                                                                */
+/* 4 /                                                                                                                */
+/**********************************************************************************************************************/
+
+/**********************************************************************************************************************/
+/* INCLUDES                                                                                                           */
+/**********************************************************************************************************************/
 #include "log_decoder.h"
-/**********************************************************************************************************************
- * Type Declarations
- *********************************************************************************************************************/
+
+/**********************************************************************************************************************/
+/* DEFINES                                                                                                            */
+/**********************************************************************************************************************/
+
+/**********************************************************************************************************************/
+/* GLOBAL VARIABLES                                                                                                   */
+/**********************************************************************************************************************/
 str_outputFrameData outputFrameData[FRAME_COUNT];
-static uint16 vel_prevTimestamp = FALSE;
-static uint16 pos_prevTimestamp = FALSE;
+uint16 vel_prevTimestamp = FALSE;
+uint16 pos_prevTimestamp = FALSE;
 
-static uint16 vel_prevFrameNB = FALSE;
-static uint16 pos_prevFrameNB = FALSE;
+uint16 vel_prevFrameNB = FALSE;
+uint16 pos_prevFrameNB = FALSE;
 
-static uint16 framDrpCnt = FALSE;
-/**********************************************************************************************************************
- * Function Declarations
- *********************************************************************************************************************/
-static inline boolean posChecTimeOK(uint16 currTimestamp);
-static inline boolean velChecTimeOK(uint16 currTimestamp);
-static inline boolean u8Checksum8BitsValid (uint32 u32data, uint16 u8Checksum);
-static inline void posFrameDecode(str_inputFrameData *recievedFrame, uint16 frameIdx);
-static inline void velFrameDecode(str_inputFrameData *recievedFrame, uint16 frameIdx);
-static inline void decodeContent(int argc, char *argv[]);
-/**********************************************************************************************************************
- * Function Definitions
- *********************************************************************************************************************/
-/**
- * @brief Check if the position frame Timestamp is Ok.
- *
- * <b>Reentrant</b>: YES \n
- * <b>Pre-emptible</b>: YES
- *
- * @pre
- * @param[in] uint16
- * @return boolean
- * @post
- */
-static inline boolean posChecTimeOK(uint16 currTimestamp)
+uint16 framDrpCnt = FALSE;
+/**********************************************************************************************************************/
+/* LOCAL VARIABLES                                                                                                    */
+/**********************************************************************************************************************/
+
+/**********************************************************************************************************************/
+/* LOCAL FUNCTIONS PROTOTYPES                                                                                         */
+/**********************************************************************************************************************/
+
+/**********************************************************************************************************************/
+/* LOCAL FUNCTIONS DEFINITION                                                                                         */
+/**********************************************************************************************************************/
+
+/**********************************************************************************************************************/
+/* GLOBAL FUNCTIONS                                                                                                   */
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
+/*                                                                                                                    */
+/* !FuncName    : COMP_vidInit                                                                                        */
+/* !Description :                                                                                                     */
+/* !Number      : 1                                                                                                   */
+/* !Reference   :                                                                                                     */
+/*                                                                                                                    */
+/* !Trace_To    :                                                                                                     */
+/*                                                                                                                    */
+/**********************************************************************************************************************/
+/* !LastAuthor  :  Developer                                                                                          */
+/**********************************************************************************************************************/
+boolean posChecTimeOK(uint16 currTimestamp)
 {
     if (currTimestamp == FALSE)
     {
@@ -63,18 +84,20 @@ static inline boolean posChecTimeOK(uint16 currTimestamp)
         }  
     }
 }
-/**
- * @brief Check if the velocity frame Timestamp is Ok.
- *
- * <b>Reentrant</b>: YES \n
- * <b>Pre-emptible</b>: YES
- *
- * @pre
- * @param[in] uint16
- * @return boolean
- * @post
- */
-static inline boolean velChecTimeOK(uint16 currTimestamp)
+
+/**********************************************************************************************************************/
+/*                                                                                                                    */
+/* !FuncName    : COMP_vidInit                                                                                        */
+/* !Description :                                                                                                     */
+/* !Number      : 1                                                                                                   */
+/* !Reference   :                                                                                                     */
+/*                                                                                                                    */
+/* !Trace_To    :                                                                                                     */
+/*                                                                                                                    */
+/**********************************************************************************************************************/
+/* !LastAuthor  :  Developer                                                                                          */
+/**********************************************************************************************************************/
+boolean velChecTimeOK(uint16 currTimestamp)
 {
     if (currTimestamp == FALSE)
     {
@@ -93,18 +116,20 @@ static inline boolean velChecTimeOK(uint16 currTimestamp)
         }  
     }
 }
-/**
- * @brief 8-bit Checksum on payload data.
- *
- * <b>Reentrant</b>: YES \n
- * <b>Pre-emptible</b>: YES
- *
- * @pre
- * @param[in] uint32, uint16
- * @return boolean
- * @post
- */
-static inline boolean u8Checksum8BitsValid (uint32 u32_payloadData, uint16 u16_Checksum)
+
+/**********************************************************************************************************************/
+/*                                                                                                                    */
+/* !FuncName    : COMP_vidInit                                                                                        */
+/* !Description :                                                                                                     */
+/* !Number      : 1                                                                                                   */
+/* !Reference   :                                                                                                     */
+/*                                                                                                                    */
+/* !Trace_To    :                                                                                                     */
+/*                                                                                                                    */
+/**********************************************************************************************************************/
+/* !LastAuthor  :  Developer                                                                                          */
+/**********************************************************************************************************************/
+boolean u8Checksum8BitsValid (uint32 u32_payloadData, uint16 u16_Checksum)
 {
     uint8 u8Valid = FALSE;
     uint8 u8Status = FALSE;
@@ -116,18 +141,20 @@ static inline boolean u8Checksum8BitsValid (uint32 u32_payloadData, uint16 u16_C
     u8Valid = u8Valid + u16_Checksum;
     return (boolean)u8Valid;
 }
-/**
- * @brief Position frame function to decode the input Frame data.
- *
- * <b>Reentrant</b>: YES \n
- * <b>Pre-emptible</b>: YES
- *
- * @pre
- * @param[in] str_inputFrameData *, uint16
- * @return boolean
- * @post
- */
-static inline void posFrameDecode(str_inputFrameData *recievedFrame, uint16 frameIdx)
+
+/**********************************************************************************************************************/
+/*                                                                                                                    */
+/* !FuncName    : COMP_vidInit                                                                                        */
+/* !Description :                                                                                                     */
+/* !Number      : 1                                                                                                   */
+/* !Reference   :                                                                                                     */
+/*                                                                                                                    */
+/* !Trace_To    :                                                                                                     */
+/*                                                                                                                    */
+/**********************************************************************************************************************/
+/* !LastAuthor  :  Developer                                                                                          */
+/**********************************************************************************************************************/
+void posFrameDecode(str_inputFrameData *recievedFrame, uint16 frameIdx)
 {
 
     uint16 u16_localPositionX =FALSE;
@@ -164,18 +191,20 @@ static inline void posFrameDecode(str_inputFrameData *recievedFrame, uint16 fram
     //printf("%d-->%d\n",recievedFrame->frameNB,framDrpCnt);
     //printf("%x-->x=%d   y=%d\n",recievedFrame->payload,outputFrameData[frameIdx].positionX,outputFrameData[frameIdx].positionY); 
 }
-/**
- * @brief Position frame function to decode the input Frame data.
- *
- * <b>Reentrant</b>: YES \n
- * <b>Pre-emptible</b>: YES
- *
- * @pre
- * @param[in] str_inputFrameData *, uint16
- * @return boolean
- * @post
- */
-static inline void velFrameDecode(str_inputFrameData *recievedFrame, uint16 frameIdx)
+
+/**********************************************************************************************************************/
+/*                                                                                                                    */
+/* !FuncName    : COMP_vidInit                                                                                        */
+/* !Description :                                                                                                     */
+/* !Number      : 1                                                                                                   */
+/* !Reference   :                                                                                                     */
+/*                                                                                                                    */
+/* !Trace_To    :                                                                                                     */
+/*                                                                                                                    */
+/**********************************************************************************************************************/
+/* !LastAuthor  :  Developer                                                                                          */
+/**********************************************************************************************************************/
+void velFrameDecode(str_inputFrameData *recievedFrame, uint16 frameIdx)
 {
     uint16 u16_localVelocityX =FALSE;
     uint16 u16_localVelocityY =FALSE;
@@ -212,18 +241,20 @@ static inline void velFrameDecode(str_inputFrameData *recievedFrame, uint16 fram
     //printf("%d-->%d\n",recievedFrame->frameNB,framDrpCnt);
     //printf("%x-->x=%d   y=%d\n",recievedFrame->payload,outputFrameData[frameIdx].positionX,outputFrameData[frameIdx].positionY); 
 }
-/**
- * @brief Decode function to decide upon the fram ID which decoding logic will be executed.
- *
- * <b>Reentrant</b>: YES \n
- * <b>Pre-emptible</b>: YES
- *
- * @pre
- * @param[in] int *, char *
- * @return void
- * @post
- */
-static inline void decodeContent(int argc, char *argv[])
+
+/**********************************************************************************************************************/
+/*                                                                                                                    */
+/* !FuncName    : COMP_vidInit                                                                                        */
+/* !Description :                                                                                                     */
+/* !Number      : 1                                                                                                   */
+/* !Reference   :                                                                                                     */
+/*                                                                                                                    */
+/* !Trace_To    :                                                                                                     */
+/*                                                                                                                    */
+/**********************************************************************************************************************/
+/* !LastAuthor  :  Developer                                                                                          */
+/**********************************************************************************************************************/
+void decodeContent(int argc, char *argv[])
 {
     FILE *inputFile = fopen(argv[1],"r");
     FILE *outputFile = fopen(argv[2],"w");
@@ -276,17 +307,14 @@ static inline void decodeContent(int argc, char *argv[])
                         outputFrameData[i].u16_frameDropCnt);
     fclose(outputFile);
 }
-/**
- * @brief lod_decoder main function.
- *
- * <b>Reentrant</b>: YES \n
- * <b>Pre-emptible</b>: YES
- *
- * @pre
- * @param[in] int, char **
- * @return int
- * @post
- */
+
+/**********************************************************************************************************************/
+/*                                                                                                                    */
+/* !FuncName    : main                                                                                                */
+/* !Description : Application main function                                                                           */
+/* !Number      : 1                                                                                                   */
+/*                                                                                                                    */
+/**********************************************************************************************************************/
 int main(int argc, char **argv)
 {
     
@@ -301,3 +329,5 @@ int main(int argc, char **argv)
     }
     return 0;
 }
+
+/*---------------------------------------------------- end of file ---------------------------------------------------*/
