@@ -1,3 +1,9 @@
+Assume timestamp always stat with value 0
+Assume FrameNb always stat with value 0
+
+
+
+
 Please follow the following instructions to build and compile "log_decoder"
 
 -Open command prompt window where the C&H files are located
@@ -6,4 +12,3 @@ Please follow the following instructions to build and compile "log_decoder"
 
 
 Thank you
-M.Tarek Abozaid

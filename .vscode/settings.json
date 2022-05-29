@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "log_decoder.h": "c",
+        "log_decoder_types.h": "c"
+    }
+}
