@@ -5,7 +5,7 @@
 /*                and provides an output log file also in .csv format, with Payload decoded into meaningful           */
 /*                values and additional flags if certains checks are violated for a given frame.                      */
 /*                                                                                                                    */
-/*  File        : LOG_DECODER_H.h                                                                                     */
+/*  File        : log_decoder.h                                                                                       */
 /*                                                                                                                    */
 /*  Author      : Saif El-Deen M.                                                                                     */
 /*                                                                                                                    */
@@ -36,7 +36,7 @@
 #define ELEMENTS_NUM_PER_ROW            5U
 #define MAX_CHAR_NUM_PER_LINE           100U
 #define HEADER_FOR_INPUT_FILE           "ID,FrameNb,Timestamp,Payload,Checksum"
-#define HEADER_FOR_OUTPUT_FILE          "ID,FrameNB,Timestamp,X-Position,Y-Position,X-Velocity,Y-Velocity,ChecksumOK,TimestampOk,FrameDropCnt\n"
+#define HEADER_FOR_OUTPUT_FILE          "ID,FrameNb,Timestamp,PositionX,PositionY,VelocityX,VelocityY,ChecksumOK,TimestampOk,FrameDropCnt\n"
 
 /**********************************************************************************************************************/
 /* TYPEDEF                                                                                                            */

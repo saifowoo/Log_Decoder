@@ -5,7 +5,7 @@
 /*                and provides an output log file also in .csv format, with Payload decoded into meaningful           */
 /*                values and additional flags if certains checks are violated for a given frame.                      */
 /*                                                                                                                    */
-/*  File        : LogDecoder_Types.h                                                                                  */
+/*  File        : log_decoder_Types.h                                                                                 */
 /*                                                                                                                    */
 /*  Author      : Saif El-Deen M.                                                                                     */
 /*                                                                                                                    */

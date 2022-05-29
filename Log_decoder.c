@@ -5,7 +5,7 @@
 /*                and provides an output log file also in .csv format, with Payload decoded into meaningful           */
 /*                values and additional flags if certains checks are violated for a given frame.                      */
 /*                                                                                                                    */
-/*  File        : LogDecoder.c                                                                                        */
+/*  File        : log_decoder.c                                                                                       */
 /*                                                                                                                    */
 /*  Author      : Saif El-Deen M.                                                                                     */
 /*                                                                                                                    */
@@ -76,15 +76,22 @@ static uint16 LogDecoder_u8PosCalcFrameDropCnt(uint16 u16FrameNB)
     static boolean bLocPosFirstReading    = TRUE;
     static uint16  u16LocPosFrameDropCnt  = FALSE;
 
+    /* Check if it's the first frame recieved                                                     */
     if(bLocPosFirstReading == TRUE)
     {
+        /* Clear the first frame recieved flag and reset the counter                              */
         u16LocPosFrameDropCnt = FALSE;
         bLocPosFirstReading = FALSE;
     }
     else
     {
+        /* Set the Frame Drop Counter to value equal to the difference between the previous frame */
+        /* and the current frame minus 1. because for example :                                   */
+        /* -> If (current = 2 ) - (Previous = 1) - (1) = (0) Then, no droped frame                */
+        /* -> If (current = 4 ) - (Previous = 1) - (1) = (2) Then, we have two dropped frames     */
         u16LocPosFrameDropCnt = u16LocPosFrameDropCnt + (u16FrameNB - u16LocPosFrameNbNm1 - 1);
     }
+    /* Set prevoius fram equal to the current frame for the next iteration                        */
     u16LocPosFrameNbNm1 = u16FrameNB;
 
     return u16LocPosFrameDropCnt;
@@ -108,15 +115,22 @@ static uint16 LogDecoder_u8VelCalcFrameDropCnt(uint16 u16FrameNB)
     static boolean bLocVelFirstReading    = TRUE;
     static uint16  u16LocVelFrameDropCnt  = FALSE;
 
+    /* Check if it's the first frame recieved                                                     */
     if(bLocVelFirstReading == TRUE)
     {
+        /* Clear the first frame recieved flag and reset the counter                              */
         u16LocVelFrameDropCnt = FALSE;
         bLocVelFirstReading = FALSE;
     }
     else
     {
+        /* Set the Frame Drop Counter to value equal to the difference between the previous frame */
+        /* and the current frame minus 1. because for example :                                   */
+        /* -> If (current = 2 ) - (Previous = 1) - (1) = (0) Then, no droped frame                */
+        /* -> If (current = 4 ) - (Previous = 1) - (1) = (2) Then, we have two dropped frames     */
         u16LocVelFrameDropCnt = u16LocVelFrameDropCnt + (u16FrameNB - u16LocVelFrameNbNm1 - 1);
     }
+    /* Set prevoius frame equal to the current frame for the next iteration                       */
     u16LocVelFrameNbNm1 = u16FrameNB;
 
     return u16LocVelFrameDropCnt;
@@ -141,13 +155,16 @@ static boolean LogDecoder_bPosTimeOutStatus(uint16 u16FrameTimestamp)
     static boolean bLocPosFirstReading = TRUE;
            boolean bLocTimeOutStatus = STATUS_NOK;
 
+    /* Check if it's the first frame recieved                                                     */
     if(bLocPosFirstReading == TRUE)
     {
+        /* Clear the first frame recieved flag and reset the return OK                            */
         bLocTimeOutStatus = STATUS_OK;
         bLocPosFirstReading = FALSE;
     }
     else
     {
+        /* Check if the timestamp is equal to the cycle time +/- range (25 +/- 2 ms)              */
         if(  ((u16FrameTimestamp - u16LocPosTimeStampNm1) > (POS_TIMESTAMP_PERIODICITY + POS_TIMESTAMP_MARGIN))
           || ((u16FrameTimestamp - u16LocPosTimeStampNm1) < (POS_TIMESTAMP_PERIODICITY - POS_TIMESTAMP_MARGIN)) )
         {
@@ -158,6 +175,7 @@ static boolean LogDecoder_bPosTimeOutStatus(uint16 u16FrameTimestamp)
             bLocTimeOutStatus = STATUS_OK;
         }
     }
+    /* Set prevoius frame equal to the current frame for the next iteration                       */
     u16LocPosTimeStampNm1 = u16FrameTimestamp;
 
     return bLocTimeOutStatus;
@@ -182,13 +200,16 @@ static boolean LogDecoder_bVelTimeOutStatus(uint16 u16FrameTimestamp)
     static boolean bLocVelFirstReading = TRUE;
            boolean bLocTimeOutStatus = STATUS_NOK;
 
+    /* Check if it's the first frame recieved                                                    */
     if(bLocVelFirstReading == TRUE)
     {
+        /* Clear the first frame recieved flag and reset the return OK                           */
         bLocTimeOutStatus = STATUS_OK;
         bLocVelFirstReading = FALSE;
     }
     else
     {
+        /* Check if the timestamp is equal to the cycle time +/- range (50 +/- 3 ms)              */
         if(  ((u16FrameTimestamp - u16LocVelTimeStampNm1) > (VEL_TIMESTAMP_PERIODICITY + VEL_TIMESTAMP_MARGIN))
           || ((u16FrameTimestamp - u16LocVelTimeStampNm1) < (VEL_TIMESTAMP_PERIODICITY - VEL_TIMESTAMP_MARGIN)) )
         {
@@ -199,6 +220,7 @@ static boolean LogDecoder_bVelTimeOutStatus(uint16 u16FrameTimestamp)
             bLocTimeOutStatus = STATUS_OK;
         }
     }
+    /* Set prevoius frame equal to the current frame for the next iteration                       */
     u16LocVelTimeStampNm1 = u16FrameTimestamp;
 
     return bLocTimeOutStatus;
@@ -228,9 +250,12 @@ static boolean LogDecoder_u8ChecksumStatus(uint32 u32PayloadValue, uint8 u8Check
 
     for(u8LocIndex = 0; u8LocIndex < PAYLOAD_BYTES_NUMBER ; u8LocIndex++)
     {
+        /* Add all the bytes of payload data together (Byte1 + Byte2 + ...) and take only the     */
+        /* first byte of the sum                                                                  */
         u8LocDataSum = u8LocDataSum + (uint8)((u32PayloadValue >> (u8LocIndex * SHIFT_8BITS)) & (MASK_1BYTE));
     }
-
+    /* Add the sum of payload bytes to the checksum and take the first byte only. if it's equal   */
+    /* to zero then return OK otherwise return NOK                                                */
     u8LocChecksumChk = (uint8)(u8LocDataSum + u8Checksum);
     if(u8LocChecksumChk == CHECKSUM_OK)
     {
@@ -263,14 +288,16 @@ static strDecodedDataType LogDecoder_strPosFrameDecode(uint32 u32PayloadValue)
 {
     strDecodedDataType strLocDecodedData = {FALSE};
     uint32 u32LocPosPhyValue = FALSE;
-
+    /*Set the Velocity to zero                                                                    */
     strLocDecodedData.f32VelX = FALSE;
     strLocDecodedData.f32VelY = FALSE;
 
+    /*Take the first 2Bytes and divide it by 100 to have PositionX  in (m)                        */
     u32LocPosPhyValue = (u32PayloadValue >> SHIFT_16BITS);
     strLocDecodedData.f32PosX = (((float32)u32LocPosPhyValue)/100U);
 
     u32LocPosPhyValue = FALSE;
+    /*Take the Last 2Bytes and divide it by 1000 to have PositionY  in (m)                        */
     u32LocPosPhyValue = (u32PayloadValue & 0x0000FFFFU);
     strLocDecodedData.f32PosY = (((float32)u32LocPosPhyValue - MAX_POSITIVE_SIGNED_16BITS)/1000U);
 
@@ -297,13 +324,16 @@ static strDecodedDataType LogDecoder_strVelFrameDecode(uint32 u32PayloadValue)
     strDecodedDataType strLocDecodedData = {FALSE};
     uint32 u32LocVelPhyValue = FALSE;
 
+    /*Set the Position to zero                                                                    */
     strLocDecodedData.f32PosX = FALSE;
     strLocDecodedData.f32PosY = FALSE;
 
+    /*Take the first 2Bytes and divide it by 1000 to have VelocityX  in (m/s)                     */
     u32LocVelPhyValue = (u32PayloadValue >> SHIFT_16BITS);
     strLocDecodedData.f32VelX = (((float32)u32LocVelPhyValue - MAX_POSITIVE_SIGNED_16BITS)/1000U);
 
     u32LocVelPhyValue = FALSE;
+    /*Take the Last 2Bytes and divide it by 1000 to have VelocityY  in (m)                        */
     u32LocVelPhyValue = (u32PayloadValue & 0x0000FFFFU);
     strLocDecodedData.f32VelY = (((float32)u32LocVelPhyValue - MAX_POSITIVE_SIGNED_16BITS)/1000U);
 
@@ -329,7 +359,7 @@ static strDecodedDataType LogDecoder_strVelFrameDecode(uint32 u32PayloadValue)
 /*                                                         bChecksumOK,                                               */
 /*                                                         bTimeoutOK,                                                */
 /*                                                         u8Id                                                       */
-/* !Number      : 7                                                                                                   */
+/* !Number      : 8                                                                                                   */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
 static LogDecoder_strOutputDataType LogDecoder_strDecodeFrameContent(LogDecoder_strInputDataType strInputData)
@@ -338,6 +368,7 @@ static LogDecoder_strOutputDataType LogDecoder_strDecodeFrameContent(LogDecoder_
     uint16 u16_localPositionX =FALSE;
     uint16 u16_localPositionY =FALSE;
 
+    /*Copy ID,FrameNb and Timestamp  to the output*/
     strLocOutputData.u8Id = strInputData.u8Id;
     strLocOutputData.u16FrameNb = strInputData.u16FrameNb;
     strLocOutputData.u16Timestamp = strInputData.u16Timestamp;
@@ -345,6 +376,7 @@ static LogDecoder_strOutputDataType LogDecoder_strDecodeFrameContent(LogDecoder_
     switch(strInputData.u8Id)
     {
         case FRAME_ID_POSITION:
+            /* Call the Position internal functions */
             strLocOutputData.u16FrameDropCnt = LogDecoder_u8PosCalcFrameDropCnt(strInputData.u16FrameNb);
             strLocOutputData.bTimeoutOK      = LogDecoder_bPosTimeOutStatus(strInputData.u16Timestamp);
             strLocOutputData.bChecksumOK     = LogDecoder_u8ChecksumStatus(strInputData.u32Payload, strInputData.u8Checksum);
@@ -352,6 +384,7 @@ static LogDecoder_strOutputDataType LogDecoder_strDecodeFrameContent(LogDecoder_
             break;
 
         case FRAME_ID_VELOCITY:
+            /* Call the Velocity internal functions */
             strLocOutputData.u16FrameDropCnt = LogDecoder_u8VelCalcFrameDropCnt(strInputData.u16FrameNb);
             strLocOutputData.bTimeoutOK      = LogDecoder_bVelTimeOutStatus(strInputData.u16Timestamp);
             strLocOutputData.bChecksumOK     = LogDecoder_u8ChecksumStatus(strInputData.u32Payload, strInputData.u8Checksum);
@@ -359,6 +392,7 @@ static LogDecoder_strOutputDataType LogDecoder_strDecodeFrameContent(LogDecoder_
             break;
 
         default:
+            /* If the frame ID not equal to Position or Velocity, print Warning message*/
             printf("Invalid Frame ID");
             break;
     }
@@ -383,7 +417,9 @@ static LogDecoder_strOutputDataType LogDecoder_strDecodeFrameContent(LogDecoder_
 /**********************************************************************************************************************/
 void LogDecoder_vidMainFunction(int s32NumOfArg, char **ptrMainArgs)
 {
+    /* Open the Input .csv file with read access                                                  */
     FILE   *LocInputFile = fopen(ptrMainArgs[INPUT_ARGUMENT_NUMBER],"r");
+    /* Open the Input .csv file with write access                                                 */
     FILE   *LocOutputFile = fopen(ptrMainArgs[OUTPUT_ARGUMENT_NUMBER],"w");
 
     uint32 u32Id = FALSE;
@@ -400,6 +436,7 @@ void LogDecoder_vidMainFunction(int s32NumOfArg, char **ptrMainArgs)
     uint8 u8LocElementsNumPerRow = FALSE;
     uint16 u16RowNumber = FALSE;
 
+    /* Check if the number of arguments is equal to the expected number                           */
     if (s32NumOfArg != ARGUMENTS_NUMBER)
     {
         printf("Help Info:\n"
@@ -410,6 +447,7 @@ void LogDecoder_vidMainFunction(int s32NumOfArg, char **ptrMainArgs)
     }
     else
     {
+        /* Scan and check the first row format is the same expected format                        */
         fscanf(LocInputFile,"%s",sLocFirstRow);
         if(strcmp(sLocFirstRow, HEADER_FOR_INPUT_FILE) == STRING_COMPARE_OK)
         {
@@ -429,6 +467,7 @@ void LogDecoder_vidMainFunction(int s32NumOfArg, char **ptrMainArgs)
                 strLocInputData.u32Payload   = u32Payload;
                 strLocInputData.u8Checksum   = (uint8)u32Checksum;
 
+                /* Check if the number of elements per raw is equal to the expected number        */
                 if (u8LocElementsNumPerRow == ELEMENTS_NUM_PER_ROW)
                 {
                     strLocOutputData = LogDecoder_strDecodeFrameContent(strLocInputData);
@@ -446,7 +485,7 @@ void LogDecoder_vidMainFunction(int s32NumOfArg, char **ptrMainArgs)
                 }
                 else
                 {
-                    printf("Missind data in row number %d", (u16RowNumber + 2));
+                    printf("Missing data in row number %d", (u16RowNumber + 2));
                     break;
                 }
             }
@@ -456,7 +495,8 @@ void LogDecoder_vidMainFunction(int s32NumOfArg, char **ptrMainArgs)
             printf("First row must be in the following format :\n"
                 "ID,FrameNb,Timestamp,Payload,Checksum");
         }
-        
+
+        /* Close input and output Files */
         fclose(LocInputFile);
         fclose(LocOutputFile);
     }
