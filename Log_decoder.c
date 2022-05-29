@@ -12,10 +12,14 @@
 /*  Date        : 29/05/2022                                                                                          */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
-/* 1 / LogDecoder_u8CalcFrameDropCnt                                                                                  */
-/* 2 / LogDecoder_bTimeOutStatus                                                                                      */
-/* 3 / LogDecoder_u8ChecksumStatus                                                                                    */
-/* 4 /                                                                                                                */
+/* 1 / LogDecoder_u8PosCalcFrameDropCnt                                                                               */
+/* 2 / LogDecoder_u8VelCalcFrameDropCnt                                                                               */
+/* 3 / LogDecoder_bPosTimeOutStatus                                                                                   */
+/* 4 / LogDecoder_bVelTimeOutStatus                                                                                   */
+/* 5 / LogDecoder_u8ChecksumStatus                                                                                    */
+/* 6 / LogDecoder_strPosFrameDecode                                                                                   */
+/* 7 / LogDecoder_strDecodeFrameContent                                                                               */
+/* 8 / LogDecoder_vidMainFunction                                                                                     */
 /**********************************************************************************************************************/
 
 /**********************************************************************************************************************/
@@ -24,38 +28,35 @@
 #include "log_decoder.h"
 
 /**********************************************************************************************************************/
-/* DEFINES                                                                                                            */
+/* LOCAL DEFINES                                                                                                      */
 /**********************************************************************************************************************/
-#define STATUS_OK                       1U
-#define STATUS_NOK                      0U
-#define CHECKSUM_OK                     0U
-#define STRING_COMPARE_OK               0U
-#define PAYLOAD_BYTES_NUMBER            4U
-#define SHIFT_8BITS                     8U
-#define SHIFT_16BITS                    16U
-#define MASK_1BYTE                      0xFFU
-#define MAX_POSITIVE_SIGNED_16BITS      32767U
-#define ELEMENTS_NUM_PER_ROW            5U
-#define ARGUMENTS_NUMBER                3U
-
-/**********************************************************************************************************************/
-/* GLOBAL VARIABLES                                                                                                   */
-/**********************************************************************************************************************/
-
-/**********************************************************************************************************************/
-/* LOCAL VARIABLES                                                                                                    */
-/**********************************************************************************************************************/
+#define FALSE                            0U
+#define TRUE                             1U
+#define STATUS_OK                        1U
+#define STATUS_NOK                       0U
+#define CHECKSUM_OK                      0U
+#define STRING_COMPARE_OK                0U
+#define PAYLOAD_BYTES_NUMBER             4U
+#define SHIFT_8BITS                      8U
+#define SHIFT_16BITS                     16U
+#define MASK_1BYTE                       0xFFU
+#define MAX_POSITIVE_SIGNED_16BITS       32767U
 
 /**********************************************************************************************************************/
 /* LOCAL FUNCTIONS PROTOTYPES                                                                                         */
 /**********************************************************************************************************************/
+static uint16 LogDecoder_u8PosCalcFrameDropCnt(uint16 u16FrameNB);
+static uint16 LogDecoder_u8VelCalcFrameDropCnt(uint16 u16FrameNB);
+static boolean LogDecoder_bPosTimeOutStatus(uint16 u16FrameTimestamp);
+static boolean LogDecoder_bVelTimeOutStatus(uint16 u16FrameTimestamp);
+static boolean LogDecoder_bTimeOutStatus(uint8 u8FrameId, uint16 u16FrameTimestamp);
+static boolean LogDecoder_u8ChecksumStatus(uint32 u32PayloadValue, uint8 u8Checksum);
+static strDecodedDataType LogDecoder_strPosFrameDecode(uint32 u32PayloadValue);
+static strDecodedDataType LogDecoder_strVelFrameDecode(uint32 u32PayloadValue);
+static LogDecoder_strOutputDataType LogDecoder_strDecodeFrameContent(LogDecoder_strInputDataType strInputData);
 
 /**********************************************************************************************************************/
 /* LOCAL FUNCTIONS DEFINITION                                                                                         */
-/**********************************************************************************************************************/
-
-/**********************************************************************************************************************/
-/* GLOBAL FUNCTIONS                                                                                                   */
 /**********************************************************************************************************************/
 /**********************************************************************************************************************/
 /*                                                                                                                    */
@@ -69,7 +70,7 @@
 /* !Number      : 1                                                                                                   */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
-uint16 LogDecoder_u8PosCalcFrameDropCnt(uint16 u16FrameNB)
+static uint16 LogDecoder_u8PosCalcFrameDropCnt(uint16 u16FrameNB)
 {
     static uint16  u16LocPosFrameNbNm1    = FALSE;
     static boolean bLocPosFirstReading    = TRUE;
@@ -101,7 +102,7 @@ uint16 LogDecoder_u8PosCalcFrameDropCnt(uint16 u16FrameNB)
 /* !Number      : 2                                                                                                   */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
-uint16 LogDecoder_u8VelCalcFrameDropCnt(uint16 u16FrameNB)
+static uint16 LogDecoder_u8VelCalcFrameDropCnt(uint16 u16FrameNB)
 {
     static uint16  u16LocVelFrameNbNm1    = FALSE;
     static boolean bLocVelFirstReading    = TRUE;
@@ -134,7 +135,7 @@ uint16 LogDecoder_u8VelCalcFrameDropCnt(uint16 u16FrameNB)
 /* !Number      : 3                                                                                                   */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
-boolean LogDecoder_bPosTimeOutStatus(uint16 u16FrameTimestamp)
+static boolean LogDecoder_bPosTimeOutStatus(uint16 u16FrameTimestamp)
 {
     static uint16 u16LocPosTimeStampNm1 = FALSE;
     static boolean bLocPosFirstReading = TRUE;
@@ -175,7 +176,7 @@ boolean LogDecoder_bPosTimeOutStatus(uint16 u16FrameTimestamp)
 /* !Number      : 4                                                                                                   */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
-boolean LogDecoder_bVelTimeOutStatus(uint16 u16FrameTimestamp)
+static boolean LogDecoder_bVelTimeOutStatus(uint16 u16FrameTimestamp)
 {
     static uint16 u16LocVelTimeStampNm1 = FALSE;
     static boolean bLocVelFirstReading = TRUE;
@@ -218,7 +219,7 @@ boolean LogDecoder_bVelTimeOutStatus(uint16 u16FrameTimestamp)
 /* !Number      : 5                                                                                                   */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
-boolean LogDecoder_u8ChecksumStatus(uint32 u32PayloadValue, uint8 u8Checksum)
+static boolean LogDecoder_u8ChecksumStatus(uint32 u32PayloadValue, uint8 u8Checksum)
 {
     boolean bLocChecksumstatus = FALSE;
     uint8 u8LocDataSum = FALSE;
@@ -246,7 +247,7 @@ boolean LogDecoder_u8ChecksumStatus(uint32 u32PayloadValue, uint8 u8Checksum)
 /**********************************************************************************************************************/
 /*                                                                                                                    */
 /* !FuncName    : LogDecoder_strPosFrameDecode                                                                        */
-/* !Description : Transfer the Position raw value to physical value (m/s)                                             */
+/* !Description : Transfer the Position raw value to physical value (m)                                               */
 /*                                                                                                                    */
 /* !Inputs      : u32PayloadValue               !Comment : Hex coded data in big endian format                        */
 /*                                              !Range   : [0x0000, 0xFFFF]                                           */
@@ -258,7 +259,7 @@ boolean LogDecoder_u8ChecksumStatus(uint32 u32PayloadValue, uint8 u8Checksum)
 /* !Number      : 6                                                                                                   */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
-strDecodedDataType LogDecoder_strPosFrameDecode(uint32 u32PayloadValue)
+static strDecodedDataType LogDecoder_strPosFrameDecode(uint32 u32PayloadValue)
 {
     strDecodedDataType strLocDecodedData = {FALSE};
     uint32 u32LocPosPhyValue = FALSE;
@@ -291,7 +292,7 @@ strDecodedDataType LogDecoder_strPosFrameDecode(uint32 u32PayloadValue)
 /* !Number      : 7                                                                                                   */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
-strDecodedDataType LogDecoder_strVelFrameDecode(uint32 u32PayloadValue)
+static strDecodedDataType LogDecoder_strVelFrameDecode(uint32 u32PayloadValue)
 {
     strDecodedDataType strLocDecodedData = {FALSE};
     uint32 u32LocVelPhyValue = FALSE;
@@ -311,17 +312,27 @@ strDecodedDataType LogDecoder_strVelFrameDecode(uint32 u32PayloadValue)
 
 /**********************************************************************************************************************/
 /*                                                                                                                    */
-/* !FuncName    : COMP_vidInit                                                                                        */
-/* !Description :                                                                                                     */
-/* !Number      : 1                                                                                                   */
-/* !Reference   :                                                                                                     */
+/* !FuncName    : LogDecoder_strDecodeFrameContent                                                                    */
+/* !Description : Decode the input frame content to the required output                                               */
 /*                                                                                                                    */
-/* !Trace_To    :                                                                                                     */
+/* !Inputs      : strInputData                  !Comment : Input frame content                                        */
+/*                                              !Range   : u32Payload,                                                */
+/*                                                         u16FrameNb,                                                */
+/*                                                         u16Timestamp,                                              */
+/*                                                         u8Id,                                                      */
+/*                                                         u8Checksum                                                 */
+/* !Outputs     : strLocDecodedData             !Comment : Retun the status of the checksum                           */
+/*                                              !Range   : strDecodedData,                                            */
+/*                                                         u16FrameDropCnt,                                           */
+/*                                                         u16FrameNb,                                                */
+/*                                                         u16Timestamp,                                              */
+/*                                                         bChecksumOK,                                               */
+/*                                                         bTimeoutOK,                                                */
+/*                                                         u8Id                                                       */
+/* !Number      : 7                                                                                                   */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
-/* !LastAuthor  :  Developer                                                                                          */
-/**********************************************************************************************************************/
-LogDecoder_strOutputDataType LogDecoder_vOutputGeneration(LogDecoder_strInputDataType strInputData)
+static LogDecoder_strOutputDataType LogDecoder_strDecodeFrameContent(LogDecoder_strInputDataType strInputData)
 {
     LogDecoder_strOutputDataType strLocOutputData = {0};
     uint16 u16_localPositionX =FALSE;
@@ -356,92 +367,107 @@ LogDecoder_strOutputDataType LogDecoder_vOutputGeneration(LogDecoder_strInputDat
 }
 
 /**********************************************************************************************************************/
+/* GLOBAL FUNCTIONS                                                                                                   */
+/**********************************************************************************************************************/
+/**********************************************************************************************************************/
 /*                                                                                                                    */
-/* !FuncName    : COMP_vidInit                                                                                        */
-/* !Description :                                                                                                     */
-/* !Number      : 1                                                                                                   */
-/* !Reference   :                                                                                                     */
+/* !FuncName    : LogDecoder_vidMainFunction                                                                          */
+/* !Description : Read Inputs from .csv file and call internal functions and write the .csv output file               */
 /*                                                                                                                    */
-/* !Trace_To    :                                                                                                     */
+/* !Inputs      : s32NumOfArg                   !Comment : Number of main arguments                                   */
+/*                                              !Range   :                                                            */
+/*                ptrMainArgs                   !Comment : main function given arguments                              */
+/*                                              !Range   :                                                            */
+/* !Number      : 7                                                                                                   */
 /*                                                                                                                    */
 /**********************************************************************************************************************/
-/* !LastAuthor  :  Developer                                                                                          */
-/**********************************************************************************************************************/
-void LogDecoder_vidMainFunction(int argc, char *argv[])
+void LogDecoder_vidMainFunction(int s32NumOfArg, char **ptrMainArgs)
 {
-    FILE   *LocInputFile = fopen(argv[1],"r");
-    FILE   *LocOutputFile = fopen(argv[2],"w");
+    FILE   *LocInputFile = fopen(ptrMainArgs[INPUT_ARGUMENT_NUMBER],"r");
+    FILE   *LocOutputFile = fopen(ptrMainArgs[OUTPUT_ARGUMENT_NUMBER],"w");
 
-    string sLocFirstRow[100] = {FALSE};
+    uint32 u32Id = FALSE;
+    uint32 u32FrameNb = FALSE;
+    uint32 u32Timestamp = FALSE;
+    uint32 u32Payload = FALSE;
+    uint32 u32Checksum = FALSE;
 
-    LogDecoder_strInputDataType strLocInputData = {0};
-    LogDecoder_strOutputDataType strLocOutputData = {0};
+    uint8 sLocFirstRow[MAX_CHAR_NUM_PER_LINE] = {FALSE};
+
+    LogDecoder_strInputDataType strLocInputData = {FALSE};
+    LogDecoder_strOutputDataType strLocOutputData = {FALSE};
 
     uint8 u8LocElementsNumPerRow = FALSE;
     uint16 u16RowNumber = FALSE;
 
-    fscanf(LocInputFile,"%s",sLocFirstRow);
-    if(strcmp(sLocFirstRow, "ID,FrameNb,Timestamp,Payload,Checksum") == STRING_COMPARE_OK)
+    if (s32NumOfArg != ARGUMENTS_NUMBER)
     {
-        fprintf(LocOutputFile,"ID, FrameNB, Timestamp, X-Position, Y-Position, X-Velocity, Y-Velocity, ChecksumOK, TimestampOk, FrameDropCnt\n");
-
-        while (!feof(LocInputFile))
-        {
-            u8LocElementsNumPerRow = fscanf(LocInputFile, "%d,%d,%d,%x,%x\n", &strLocInputData.u8Id,
-                                                                              &strLocInputData.u16FrameNb,
-                                                                              &strLocInputData.u16Timestamp,
-                                                                              &strLocInputData.u32Payload,
-                                                                              &strLocInputData.u8Checksum);
-            if (u8LocElementsNumPerRow == ELEMENTS_NUM_PER_ROW)
-            {
-                strLocOutputData = LogDecoder_vOutputGeneration(strLocInputData);
-                fprintf(LocOutputFile,"%d, %d, %d, %.2f, %.3f, %.3f, %.3f, %d, %d, %d\n", strLocOutputData.u8Id, 
-                                                                               strLocOutputData.u16FrameNb,
-                                                                               strLocOutputData.u16Timestamp,
-                                                                               strLocOutputData.strDecodedData.f32PosX,
-                                                                               strLocOutputData.strDecodedData.f32PosY,
-                                                                               strLocOutputData.strDecodedData.f32VelX,
-                                                                               strLocOutputData.strDecodedData.f32VelY,
-                                                                               strLocOutputData.bChecksumOK,
-                                                                               strLocOutputData.bTimeoutOK,
-                                                                               strLocOutputData.u16FrameDropCnt);
-                u16RowNumber++;
-            }
-            else
-            {
-                printf("Missind data in row number %d", (u16RowNumber + 2));
-                break;
-            }
-        }
+        printf("Help Info:\n"
+            "\t- The first command shall be .exe file (for example: log_decoder.exe)\n"
+            "\t- The second command shall be .csv input file (for example: input_log.csv)\n"
+            "\t- The third command shall be .csv input file (for example: output_log.csv)\n"
+            "\t- All comands shall be delimited by whitespace (for example: log_decoder.exe input_log.csv output_log.csv)");
     }
     else
     {
-        printf("First row must be in the following format :\nID,FrameNb,Timestamp,Payload,Checksum");
+        fscanf(LocInputFile,"%s",sLocFirstRow);
+        if(strcmp(sLocFirstRow, HEADER_FOR_INPUT_FILE) == STRING_COMPARE_OK)
+        {
+            fprintf(LocOutputFile, HEADER_FOR_OUTPUT_FILE);
+
+            while (!feof(LocInputFile))
+            {
+                u8LocElementsNumPerRow = fscanf(LocInputFile, "%u,%u,%u,%x,%x\n", &u32Id,
+                                                                                  &u32FrameNb,
+                                                                                  &u32Timestamp,
+                                                                                  &u32Payload,
+                                                                                  &u32Checksum);
+
+                strLocInputData.u8Id         = (uint8)u32Id;
+                strLocInputData.u16FrameNb   = (uint16)u32FrameNb;
+                strLocInputData.u16Timestamp = (uint16)u32Timestamp;
+                strLocInputData.u32Payload   = u32Payload;
+                strLocInputData.u8Checksum   = (uint8)u32Checksum;
+
+                if (u8LocElementsNumPerRow == ELEMENTS_NUM_PER_ROW)
+                {
+                    strLocOutputData = LogDecoder_strDecodeFrameContent(strLocInputData);
+                    fprintf(LocOutputFile,"%d, %d, %d, %.2f, %.3f, %.3f, %.3f, %d, %d, %d\n", strLocOutputData.u8Id, 
+                                                                                              strLocOutputData.u16FrameNb,
+                                                                                              strLocOutputData.u16Timestamp,
+                                                                                              strLocOutputData.strDecodedData.f32PosX,
+                                                                                              strLocOutputData.strDecodedData.f32PosY,
+                                                                                              strLocOutputData.strDecodedData.f32VelX,
+                                                                                              strLocOutputData.strDecodedData.f32VelY,
+                                                                                              strLocOutputData.bChecksumOK,
+                                                                                              strLocOutputData.bTimeoutOK,
+                                                                                              strLocOutputData.u16FrameDropCnt);
+                    u16RowNumber++;
+                }
+                else
+                {
+                    printf("Missind data in row number %d", (u16RowNumber + 2));
+                    break;
+                }
+            }
+        }
+        else
+        {
+            printf("First row must be in the following format :\n"
+                "ID,FrameNb,Timestamp,Payload,Checksum");
+        }
+        
+        fclose(LocInputFile);
+        fclose(LocOutputFile);
     }
-    
-    fclose(LocInputFile);
-    fclose(LocOutputFile);
 }
 
 /**********************************************************************************************************************/
-/*                                                                                                                    */
-/* !FuncName    : main                                                                                                */
-/* !Description : Application main function                                                                           */
-/* !Number      : 1                                                                                                   */
-/*                                                                                                                    */
+/* APPLICATION MAIN FUNCTION                                                                                          */
 /**********************************************************************************************************************/
 int main(int argc, char **argv)
 {
-    
-    if (argc != ARGUMENTS_NUMBER)
-    {
-        printf("Help:\n\t+Please write down ''log_decoder.exe''\n\t+Log decoder shall input data as a .csv file as a first argument'E.g. input_log.csv'\n\t+Log decoder shall output data as a .csv file with the name provided as a second argument'E.g. output_log.csv'\n");
-        return 1;
-    }
-    else
-    {
-        LogDecoder_vidMainFunction(argc, argv);
-    }
+    LogDecoder_vidMainFunction(argc, argv);
     return 0;
 }
 

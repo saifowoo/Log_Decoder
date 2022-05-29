@@ -33,7 +33,6 @@ typedef signed short        sint16;
 typedef unsigned long       uint32;
 typedef signed long         sint32;
 typedef float               float32;
-typedef char*               string;
 
 #endif /* LOG_DECODER_TYPES_H */
 /*---------------------------------------------------- end of file ---------------------------------------------------*/
